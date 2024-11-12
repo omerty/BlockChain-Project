@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 const PORT = 5000;
 
 // Middleware to parse JSON and URL-encoded data
-app.use(cors()); // Enable CORS
+app.use(cors()); 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -92,21 +92,41 @@ app.get('/Products', async (req, res) => {
 app.get('/api/products', async (req, res) => {
     try {
       const products = await prisma.product.findMany();
-      res.json(products);
+      res.json(serializeProducts(products));
     } catch (error) {
       console.error('Error fetching products:', error);
       res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
+app.get('/api/products/:id', async (req, res) => {
+    const { id } = req.params; 
+    try {
+        const product = await prisma.product.findUnique({
+            where: { id: Number(id) }, 
+        });
+
+        if (!product) {
+            console.log("No Product");
+            return res.status(404).json({ message: 'Product not found.' });
+        }
+
+        console.log("PRoduct Found");
+        res.json(serializeProducts([product]));
+    } catch (error) {
+        console.error('Error fetching product:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
 app.post('/saveProduct', async (req, res) => {
-    const { productId, ownerId, price, name } = req.body;
-    console.log(productId, ownerId, price, name); 
+    const { owner, ownerId, price, name } = req.body; 
+    console.log(owner, ownerId, price, name);
 
     try {
-        // Find the user by email
+        // Find the user by email (or however you identify users)
         const user = await prisma.user.findUnique({
-            where: { email: ownerId },
+            where: { email: owner },
         });
 
         if (!user) {
@@ -120,28 +140,108 @@ app.post('/saveProduct', async (req, res) => {
         if (existingProduct) {
             return res.status(400).json({ message: 'Product with this name already exists.' });
         }
-
-        const productPrice = BigInt(price); 
+        console.log("HERE1");
+        // Check if the wallet address already exists in the wallets array
+        if (!user.wallets.includes(ownerId)) {
+            // Add the wallet address to the wallets array
+            await prisma.user.update({
+                where: { id: user.id },
+                data: {
+                    wallets: {
+                        push: ownerId, // Add the wallet address to the array
+                    },
+                },
+            });
+        }
 
         const newProduct = await prisma.product.create({
             data: {
                 name: name,
-                price: productPrice,
+                price: price,
                 purchased: true,
-                ownerId: user.id,
-                purchasedBy: {
-                    connect: { id: user.id },
-                },
+                ownerId: user.id, 
+                purchased: false,
+                walletAddress: ownerId, 
             },
         });
 
         console.log("Product added:", newProduct);
-        res.status(201).json({ message: 'Product saved successfully.' });
+        res.status(201).json({ message: 'Product saved successfully.', product: newProduct });
     } catch (error) {
         console.error('Error saving product:', error);
         res.status(500).json({ error: 'An error occurred while saving the product.' });
     }
 });
+
+
+app.post('/purchaseProduct', async (req, res) => {
+    const { walletAddress, email, productId } = req.body; 
+    console.log("HI");
+    try {
+        // Find the user by email
+        const user = await prisma.user.findUnique({
+            where: { email: email },
+        });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+        // Find the product by ID
+        const product = await prisma.product.findUnique({
+            where: { id: Number(productId) },
+        });
+
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found.' });
+        }
+
+        // Check if the wallet address already exists in the user's wallets
+        if (!user.wallets.includes(walletAddress)) {
+            // Update the user to add the new wallet address if it's not already there
+            await prisma.user.update({
+                where: { id: user.id },
+                data: {
+                    wallets: {
+                        push: walletAddress, // Add the wallet address to the array
+                    },
+                },
+            });
+        }
+
+        // Update the product to set the new owner and mark it as purchased
+        const updatedProduct = await prisma.product.update({
+            where: { id: product.id },
+            data: {
+                ownerId: user.id,             
+                walletAddress: walletAddress, 
+                purchased: true,              
+                purchasedBy: {
+                    connect: { id: user.id }, 
+                },
+            },
+        });
+
+        res.status(201).json({ message: 'Product ownership updated successfully.', product: updatedProduct });
+    } catch (error) {
+        console.error('Error updating product owner:', error);
+        res.status(500).json({ error: 'An error occurred while updating product ownership.' });
+    }
+});
+
+// app.get('/user/:id', async (req, res) => {
+//     const {id} = req.params;
+
+//     try{
+//         const user = await prisma.user.findUnique({
+//             where: {id: Number(id)},
+//         })
+
+//         if(!user) {
+//             return res.status(404).json({ message: 'Product not found.' });
+//         }
+//     }
+// })
 
 app.delete('/products/:id', async (req, res) => {
     const { id } = req.params;

@@ -26,6 +26,7 @@ model Product {
   ownerId     Int      
   owner       User     @relation("UserProducts", fields: [ownerId], references: [id]) 
   purchasedBy User[]   @relation("UserPurchasedProducts") 
-  price       BigInt
+  price       Int
   purchased   Boolean 
+  walletAddress String
 }

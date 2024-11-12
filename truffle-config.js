@@ -1,22 +1,15 @@
-require('babel-register');
-require('babel-polyfill');
-
 module.exports = {
   networks: {
     development: {
-      host: "127.0.0.1",
-      port: 7545,
-      network_id: "*" 
+      host: "127.0.0.1",     // Localhost
+      port: 7545,            // Ethereum port
+      network_id: "*",       // Any network
     },
   },
-  contracts_directory: './src/contracts/',
-  contracts_build_directory: './src/abis/',
+
   compilers: {
     solc: {
-      optimizer: {
-        enabled: true,
-        runs: 200
-      }
+      version: "0.5.0",      // Use the version compatible with your contract
     }
-  }
-}
+  },
+};

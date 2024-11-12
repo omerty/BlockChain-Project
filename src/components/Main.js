@@ -8,8 +8,15 @@ class Main extends Component {
     error: null,
   };
 
+  _isMounted = false; // Flag to track component mounting
+
   componentDidMount() {
+    this._isMounted = true; // Set the flag to true when the component mounts
     this.fetchProducts(localStorage.getItem('userEmail'));
+  }
+
+  componentWillUnmount() {
+    this._isMounted = false; // Set the flag to false when the component unmounts
   }
 
   fetchProducts = async (email) => {
@@ -17,22 +24,30 @@ class Main extends Component {
     try {
         const response = await axios.get(`http://localhost:5000/Products?email=${encodeURIComponent(email)}`);
         console.log('Products:', response.data);
-        this.setState({ products: response.data, loading: false });
+        if (this._isMounted) { // Only update state if component is still mounted
+          this.setState({ products: response.data, loading: false });
+        }
     } catch (error) {
         console.error('Error fetching products:', error);
-        this.setState({ loading: false, error: 'Error fetching products. Please try again.' });
+        if (this._isMounted) {
+          this.setState({ loading: false, error: 'Error fetching products. Please try again.' });
+        }
     }
   }
 
   removeProduct = async (productId) => {
     try {
       await axios.delete(`http://localhost:5000/products/${productId}`);
-      this.setState(prevState => ({
-        products: prevState.products.filter(product => product.id !== productId),
-      }));
+      if (this._isMounted) { // Only update state if component is still mounted
+        this.setState(prevState => ({
+          products: prevState.products.filter(product => product.id !== productId),
+        }));
+      }
     } catch (error) {
       console.error('Error removing product:', error);
-      this.setState({ error: 'Error removing product. Please try again.' });
+      if (this._isMounted) {
+        this.setState({ error: 'Error removing product. Please try again.' });
+      }
     }
   }
 
@@ -86,7 +101,7 @@ class Main extends Component {
             ) : products.length > 0 ? products.map((product) => (
               <tr key={product.id}>
                 <td>{product.name}</td>
-                <td>{product.price ? window.web3.utils.fromWei(product.price.toString(), 'Ether') : 'N/A'}</td>
+                <td>{product.price ? product.price.toString() : 'N/A'}</td>
                 <td>
                   <button onClick={() => this.removeProduct(product.id)} className="btn btn-danger">Remove</button>
                 </td>
@@ -105,3 +120,4 @@ class Main extends Component {
 }
 
 export default Main;
+
