@@ -222,6 +222,7 @@ app.post('/purchaseProduct', async (req, res) => {
             },
         });
 
+        console.log("Product Sold");
         res.status(201).json({ message: 'Product ownership updated successfully.', product: updatedProduct });
     } catch (error) {
         console.error('Error updating product owner:', error);

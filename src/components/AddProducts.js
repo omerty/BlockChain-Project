@@ -70,6 +70,7 @@ class AddProducts extends Component {
       if (accounts.length > 0) {
         this.setState({ account: accounts[0] });
         const networkId = await web3.eth.net.getId();
+        console.log(networkId);
         const networkData = Marketplace.networks[networkId];
         if (networkData) {
           const marketplace = new web3.eth.Contract(Marketplace.abi, networkData.address);

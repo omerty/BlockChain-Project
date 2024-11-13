@@ -59,16 +59,18 @@ class ProductPage extends Component {
     console.log("Test");
 
     console.log("Marketplace Address:", marketplaceAddress);
-
+    
     if (!marketplaceAddress) {
       console.error("Marketplace contract address is not set.");
       alert("Marketplace contract address is missing. Please check your setup.");
       return;
     }
+    
     console.log("Test 1");
     const product = products.find(p => p.id === productId);
     if (!product) {
       console.error("Product not found");
+      alert("Selected product does not exist.");
       return;
     }
     
@@ -77,21 +79,50 @@ class ProductPage extends Component {
       console.log("Test 3");
       const web3 = new Web3(window.ethereum);
       console.log("Test 4");
+      
+      // Get the network ID
+      const networkId = await web3.eth.net.getId();
+      console.log("Network ID: ", networkId);
+      
       const marketplace = new web3.eth.Contract(Marketplace.abi, marketplaceAddress);
       console.log("Test 5");
       const priceInEther = web3.utils.toWei(product.price.toString(), 'ether');
       console.log("Test 6");
-      
+    
       await marketplace.methods.purchaseProduct(productId).send({
         from: account,
         value: priceInEther,
+      })
+      .on('transactionHash', (hash) => {
+          console.log("Transaction sent, hash:", hash);
+      })
+      .on('receipt', (receipt) => {
+          console.log("Transaction confirmed, receipt:", receipt);
+          alert("Product purchased successfully!");
+      })
+      .on('error', (error) => {
+          console.error("Transaction failed:", error);
+          alert("Error purchasing product, please try again.");
       });
-      alert("Product purchased successfully!");
+
+      alert("product succesfully purchased");
+    
     } catch (error) {
-      console.log("Error purchasing product:", error);
-      alert("Error purchasing product, please try again.");
+      console.error("Error purchasing product:", error);
+    
+      if (error.code === 4001) {
+        alert("Transaction rejected by user.");
+      } else if (error.message && error.message.includes("insufficient funds")) {
+        alert("Insufficient funds for this purchase.");
+      } else if (error.message && error.message.includes("execution reverted")) {
+        alert("Transaction failed: possible reasons include insufficient allowance or invalid product ID.");
+      } else if (error.message && error.message.includes("User denied transaction signature")) {
+        alert("Transaction signature denied.");
+      } else {
+        alert("Error purchasing product. Please try again later.");
+      }
     }
-  }
+}
   
   render() {
     const { email, products, loading, showPopup } = this.state;
