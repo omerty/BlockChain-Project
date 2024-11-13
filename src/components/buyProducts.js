@@ -104,8 +104,6 @@ class ProductPage extends Component {
           console.error("Transaction failed:", error);
           alert("Error purchasing product, please try again.");
       });
-
-      alert("product succesfully purchased");
     
     } catch (error) {
       console.error("Error purchasing product:", error);
