@@ -7,6 +7,10 @@ const app = express();
 const prisma = new PrismaClient();
 const PORT = 5000;
 
+const { OAuth2Client } = require('google-auth-library');
+const googleAuthClient = new OAuth2Client("914908438061-rsoo3512p3b0nngm4lh8tjo7dn3sbbkk.apps.googleusercontent.com");
+
+
 // Middleware to parse JSON and URL-encoded data
 app.use(cors()); 
 app.use(bodyParser.json());
@@ -34,6 +38,87 @@ app.post('/registerUser', async (req, res) => {
     }
 });
 
+// Example POST route to handle Google sign-up
+app.post('/googleSignup', async (req, res) => {
+    console.log('Google sign-up request received');
+    try {
+        const { token } = req.body;
+        const ticket = await googleAuthClient.verifyIdToken({
+            idToken: token,
+            audience: "914908438061-rsoo3512p3b0nngm4lh8tjo7dn3sbbkk.apps.googleusercontent.com", 
+        }); 
+
+        const payload = ticket.getPayload();
+        const email = payload.email;
+
+        // Now find the user in the database by email
+        const user = await prisma.user.findUnique({
+            where: {
+                email: email,
+            },
+        });
+
+        if (user) {
+            return res.status(404).json({ message: 'User Already Exists.' }); // Return here to prevent further execution
+        } 
+
+        try {
+            // Create a new user
+            const newUser = await prisma.user.create({
+                data: {
+                    email,
+                    password: '',
+                    products: { create: [] },
+                    wallets: [],
+                    purchased: { create: [] }
+                },
+            });
+
+            return res.status(201).json({ message: 'Registration successful', email: email }); // Send success response
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ error: 'User creation failed' }); // Return after sending error response
+        }
+
+    } catch (error) {
+        console.error('Google token verification error:', error);
+        return res.status(500).send('Google sign-up failed'); // Return after sending error response
+    }
+});
+
+
+app.post('/google-login', async (req, res) => {
+    const { token } = req.body;  // token is passed from the frontend
+
+    console.log('Received token:', token);
+
+    try {
+        // Verifying the token
+        const ticket = await googleAuthClient.verifyIdToken({
+            idToken: token,
+            audience: "914908438061-rsoo3512p3b0nngm4lh8tjo7dn3sbbkk.apps.googleusercontent.com", 
+        });
+
+        const payload = ticket.getPayload();
+        const email = payload.email;
+
+        // Now find the user in the database by email
+        const user = await prisma.user.findUnique({
+            where: {
+                email: email,
+            },
+        });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+        res.status(200).json({ message: 'Login successful', email: email });
+    } catch (error) {
+        console.error('Error logging in:', error);
+        res.status(500).json({ error: 'An error occurred during login.' });
+    }
+});
 app.post('/loginUser', async (req, res) => {
     const { email, password } = req.body;
     console.log('Received:', { email, password });
@@ -54,7 +139,6 @@ app.post('/loginUser', async (req, res) => {
             return res.status(401).json({ message: 'Invalid password.' });
         }
 
-        console.log("LOGIN");
         res.status(200).json({ message: 'Login successful'});
     } catch (error) {
         console.error('Error logging in:', error);

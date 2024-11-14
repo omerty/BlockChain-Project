@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
 import Web3 from 'web3';
-import Marketplace from '../abis/Marketplace.json'; // Assuming you have the Marketplace ABI file
+import Marketplace from '../abis/Marketplace.json'; 
+import MarketplaceAddress from '../abis/Marketplace-address.json'; 
 
 const SpecificProduct = () => {
   const { productId } = useParams();
@@ -10,6 +11,7 @@ const SpecificProduct = () => {
   const [loading, setLoading] = useState(true);
   const [account, setAccount] = useState('');
   const [web3, setWeb3] = useState(null);
+  const [marketplaceAddress] = useState(MarketplaceAddress.address); 
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -42,27 +44,35 @@ const SpecificProduct = () => {
 
   // Purchase product logic
   const purchaseProduct = async () => {
-    if (!web3 || !product || !account) {
-      alert('Please connect to MetaMask and ensure product details are loaded.');
+    if (!product || !account || !web3 || !marketplaceAddress) {
+      console.error("Missing data for purchase");
+      alert("Missing data. Please ensure all information is loaded.");
       return;
     }
 
     try {
-      const marketplaceAddress = 11111; // Replace with actual address
+      const priceInEther = web3.utils.toWei(product.price.toString(), 'ether');
+
       const marketplace = new web3.eth.Contract(Marketplace.abi, marketplaceAddress);
-
-      const priceInEther = web3.utils.toWei(product.price.toString(), 'ether'); // Convert price to Wei
-
-      // Call the purchaseProduct method in the smart contract
-      await marketplace.methods.purchaseProduct(productId).send({
+      await marketplace.methods.purchaseProduct(product.id).send({
         from: account,
-        value: priceInEther, // Send Ether with the transaction
-      });
+        value: priceInEther,
+      })
+        .on('transactionHash', (hash) => {
+          console.log("Transaction sent, hash:", hash);
+        })
+        .on('receipt', (receipt) => {
+          console.log("Transaction confirmed, receipt:", receipt);
+          alert("Product purchased successfully!");
+        })
+        .on('error', (error) => {
+          console.error("Transaction failed:", error);
+          alert("Error purchasing product, please try again.");
+        });
 
-      alert('Product purchased successfully!');
     } catch (error) {
-      console.error('Error purchasing product:', error);
-      alert('Error purchasing product, please try again.');
+      console.error("Error purchasing product:", error);
+      alert("Error purchasing product. Please try again later.");
     }
   };
 
@@ -81,8 +91,11 @@ const SpecificProduct = () => {
       <p>Owner: {product.walletAddress}</p>
       <p>Description: {product.description}</p>
 
-      {/* Buy Button */}
-      <button onClick={purchaseProduct} style={{ padding: '10px', backgroundColor: '#4CAF50', color: 'white', border: 'none', cursor: 'pointer' }}>
+      {}
+      <button
+        onClick={purchaseProduct}
+        style={{ padding: '10px', backgroundColor: '#4CAF50', color: 'white', border: 'none', cursor: 'pointer' }}
+      >
         Buy
       </button>
     </div>
