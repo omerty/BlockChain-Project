@@ -29,4 +29,5 @@ model Product {
   price       Int
   purchased   Boolean 
   walletAddress String
+  imageUrl   String @default("default_image_url")
 }

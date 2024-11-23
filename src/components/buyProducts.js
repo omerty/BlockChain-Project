@@ -3,7 +3,7 @@ import Web3 from 'web3';
 import Marketplace from '../abis/Marketplace.json';
 import { Link } from 'react-router-dom'; // Import Link from react-router-dom
 import MarketplaceAddress from '../abis/Marketplace-address.json'; // Import the address
-
+import Navbar from './Navbar';
 class ProductPage extends Component {
   constructor(props) {
     super(props);
@@ -15,7 +15,7 @@ class ProductPage extends Component {
       loading: true,
       showPopup: false,
       email: email, 
-      marketplaceAddress: MarketplaceAddress.address, // Replace this with the actual contract address
+      marketplaceAddress: MarketplaceAddress.address, 
     };
     
     this.loadProductsFromDatabase = this.loadProductsFromDatabase.bind(this);
@@ -24,7 +24,7 @@ class ProductPage extends Component {
 
   async componentDidMount() {
     await this.loadProductsFromDatabase();
-    await this.connectToMetaMask(); // Connect to MetaMask and set account
+    await this.connectToMetaMask(); 
   }
 
   async connectToMetaMask() {
@@ -128,6 +128,7 @@ class ProductPage extends Component {
     console.log(products);
     return (
       <div className="product-page" style={{ padding: '20px' }}>
+        <Navbar account={this.state.account} />
         <h1>Product Page</h1>
         <div>Email: {email}</div>
 

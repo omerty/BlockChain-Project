@@ -1,26 +1,42 @@
-import React, { Component } from 'react';
+import React from 'react'; 
+import { useState } from 'react'
+import { NavLink } from 'react-router-dom'
 
-class Navbar extends Component {
+const Navbar = () => {
+  const [showNavbar, setShowNavbar] = useState(false)
 
-  render() {
-    return (
-      <nav className="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
-        <a
-          className="navbar-brand col-sm-3 col-md-2 mr-0"
-          target="_blank"
-          rel="noopener noreferrer"
-          href=""
-        >
-          Omer Mohiuddin BlockChain Project
-        </a>
-        <ul className="navbar-nav px-3">
-          <li className="nav-item text-nowrap d-none d-sm-none d-sm-block">
-            <small className="text-white"><span id="account">{this.props.account}</span></small>
-          </li>
-        </ul>
-      </nav>
-    );
+  const handleShowNavbar = () => {
+    setShowNavbar(!showNavbar)
   }
+
+  return (
+    <nav className="navbar">
+      <div className="navbar-container">
+        <div className="logo">
+          {/* Replace with placeholder text */}
+          <span>Logo</span>
+        </div>
+        <div className="menu-icon" onClick={handleShowNavbar}>
+        </div>
+        <div className={`nav-elements ${showNavbar && 'active'}`}>
+          <ul>
+            <li>
+              <NavLink to="/AddProducts">Sell Products</NavLink>
+            </li>
+            <li>
+              <NavLink to="/BuyProducts">Buy Products</NavLink>
+            </li>
+            <li>
+              <NavLink to="/projects">Recent Transactions</NavLink>
+            </li>
+            <li>
+              <NavLink to="/about">Account</NavLink>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+  );
 }
 
-export default Navbar;
+export default Navbar

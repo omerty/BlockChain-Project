@@ -29,6 +29,8 @@ const SpecificProduct = () => {
     initializeWeb3();
   }, [productId]);
 
+  console.log(product);
+
   // Initialize Web3 and get the user's account from MetaMask
   const initializeWeb3 = async () => {
     if (window.ethereum) {
@@ -89,7 +91,13 @@ const SpecificProduct = () => {
       <h1>{product.name}</h1>
       <p>Price: {Number(product.price).toFixed(2)} Ether</p>
       <p>Owner: {product.walletAddress}</p>
-      <p>Description: {product.description}</p>
+      {product.imageUrl && (
+        <img
+          src={product.imageUrl}
+          alt={product.name}
+          style={{ maxWidth: '100%', height: 'auto', marginBottom: '20px' }}
+        />
+      )}
 
       {}
       <button

@@ -6,15 +6,53 @@ const cors = require('cors');
 const app = express();
 const prisma = new PrismaClient();
 const PORT = 5000;
-
-const { OAuth2Client } = require('google-auth-library');
-const googleAuthClient = new OAuth2Client("914908438061-rsoo3512p3b0nngm4lh8tjo7dn3sbbkk.apps.googleusercontent.com");
-
+const fs = require('fs');
 
 // Middleware to parse JSON and URL-encoded data
 app.use(cors()); 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+const { OAuth2Client } = require('google-auth-library');
+const googleAuthClient = new OAuth2Client("914908438061-rsoo3512p3b0nngm4lh8tjo7dn3sbbkk.apps.googleusercontent.com");
+
+
+const multer = require('multer');
+const path = require('path');
+
+// Define storage and filename configurations
+
+// Set the upload directory to the 'public' folder
+const uploadDir = path.join(__dirname, '..', '..', 'public', 'uploads');
+
+// Check if the directory exists, and create it if it doesn't
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    // Use the previously defined 'uploadDir' here
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname);
+  },
+});
+  
+  // Initialize Multer middleware with the storage configuration
+  const upload = multer({ storage });
+
+// POST route for file upload
+app.post('/upload', upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).send('No file uploaded');
+  }
+  console.log(req.file.filename);
+  // After the file is uploaded, use req.file to access file details
+  const ImgR = `/uploads/${req.file.filename}`;
+  res.json({ ImgR });
+});
 
 app.post('/registerUser', async (req, res) => {
     const { email, password } = req.body;
@@ -204,11 +242,11 @@ app.get('/api/products/:id', async (req, res) => {
 });
 
 app.post('/saveProduct', async (req, res) => {
-    const { owner, ownerId, price, name } = req.body; 
-    console.log(owner, ownerId, price, name);
+    const { owner, ownerId, price, name, imageUrl } = req.body; 
+    console.log(owner, ownerId, price, name, imageUrl);
+    console.log("Image URL received:", imageUrl);
 
     try {
-        // Find the user by email (or however you identify users)
         const user = await prisma.user.findUnique({
             where: { email: owner },
         });
@@ -246,6 +284,8 @@ app.post('/saveProduct', async (req, res) => {
                 ownerId: user.id, 
                 purchased: false,
                 walletAddress: ownerId, 
+                imageUrl: imageUrl,
+
             },
         });
 

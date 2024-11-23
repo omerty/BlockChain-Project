@@ -57,7 +57,7 @@ class Main extends Component {
     return (
       <div id="content">
         <h1>Add Product</h1>
-        <form onSubmit={(event) => {
+        {/* <form onSubmit={(event) => {
           event.preventDefault();
           const name = this.productName.value;
           const price = window.web3.utils.toWei(this.productPrice.value.toString(), 'Ether');
@@ -82,7 +82,7 @@ class Main extends Component {
               required />
           </div>
           <button type="submit" className="btn btn-primary">Add Product</button>
-        </form>
+        </form> */}
         <p>&nbsp;</p>
         <h2>Your Products</h2>
         <table className="table">
